@@ -36,18 +36,13 @@ sub checkrules ($elem, %opts) {
 }
 
 sub find (:$dir!, :$name, :$type, Bool :$recursive = True) is export {
-    #say "hi";
-    my @targets = eager dir($dir);
-    #say @targets.perl;
+    my @targets = dir($dir);
     my $list = gather while @targets {
         my $elem = @targets.shift;
         take $elem if checkrules($elem, { :$name, :$type });
         if $recursive {
             if $elem ~~ :d {
                 @targets.push: dir($elem);
-#                for dir($elem) -> $file {
-#                    @targets.push( $file )
-#                }
             }
         }
     }
@@ -76,7 +71,7 @@ C<File::Find> allows you to get the contents of the given directory,
 recursively, depth first.
 The only exported function, C<find()>, generates a lazy
 list of files in given directory. Every element of the list is a
-C<File::Find::Result> object, described below.
+C<IO::Path> object, described in S32::IO.
 C<find()> takes one (or more) named arguments. The C<dir> argument
 is mandatory, and sets the directory C<find()> will traverse. 
 There are also few optional arguments. If more than one is passed,
@@ -93,12 +88,6 @@ pattern will be returned.
 
 Given a type, C<find()> will only return files being the given type.
 The available types are C<file>, C<dir> or C<symlink>.
-
-=head1 File::Find::Result
-
-C<File::Find::Result> object acts like a normal string, having two
-additional accessors, C<dir> and C<name>, holding the directory
-the file is in and the filename respectively.
 
 =head1 Perl 5's File::Find
 
