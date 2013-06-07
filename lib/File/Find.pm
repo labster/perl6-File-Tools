@@ -2,23 +2,14 @@ use v6;
 
 module File::Find;
 
-class File::Find::Result is Cool {
-    has $.dir;
-    has $.name;
-
-    method Str {
-        $.dir ~ '/' ~ $.name
-    }
-}
-
 sub checkrules ($elem, %opts) {
     if %opts<name>.defined {
         given %opts<name> {
             when Regex {
-                return False unless $elem ~~ %opts<name>
+                return False unless $elem.Str ~~ %opts<name>
             }
             when Str {
-                return False unless $elem.name ~~ %opts<name>
+                return False unless $elem.basename ~~ %opts<name>
             }
             default {
                 die "name attribute has to be either Regex or Str"
@@ -28,13 +19,13 @@ sub checkrules ($elem, %opts) {
     if %opts<type>.defined {
         given %opts<type> {
             when 'dir' {
-                return False unless $elem.IO ~~ :d
+                return False unless $elem ~~ :d
             }
             when 'file' {
-                return False unless $elem.IO ~~ :f
+                return False unless $elem ~~ :f
             }
             when 'symlink' {
-                return False unless $elem.IO ~~ :l
+                return False unless $elem ~~ :l
             }
             default {
                 die "type attribute has to be dir, file or symlink";
@@ -45,19 +36,18 @@ sub checkrules ($elem, %opts) {
 }
 
 sub find (:$dir!, :$name, :$type, Bool :$recursive = True) is export {
-    my @targets = dir($dir).map: {
-        File::Find::Result.new(dir => $dir, name => .basename);
-    };
+    #say "hi";
+    my @targets = eager dir($dir);
+    #say @targets.perl;
     my $list = gather while @targets {
         my $elem = @targets.shift;
         take $elem if checkrules($elem, { :$name, :$type });
         if $recursive {
-            if $elem.IO ~~ :d {
-                for dir($elem) -> $file {
-                    @targets.push(
-                        File::Find::Result.new(dir => $elem, name => $file.basename)
-                        );
-                }
+            if $elem ~~ :d {
+                @targets.push: dir($elem);
+#                for dir($elem) -> $file {
+#                    @targets.push( $file )
+#                }
             }
         }
     }
